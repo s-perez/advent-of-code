@@ -1,38 +1,55 @@
+#![feature(array_methods, array_chunks)]
+extern crate arrayvec;
 extern crate clap;
+extern crate itertools;
 use clap::{Arg, App};
+use itertools::Itertools;
 
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Error};
 use std::path::Path;
 
+use types::{Board, TestCase};
+
 mod types;
 
-
-fn read_testcase<P>(filename: P) -> io::Result<Vec<i32>>
+fn read_testcase<P>(filename: P) -> io::Result<TestCase>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
     parse_testcase(BufReader::new(file).lines())
 }
 
-fn parse_testcase(content: Lines<BufReader<File>>) -> Result<Vec<i32>, Error> {
-    Ok(content
-       .filter(Result::is_ok)
-       .map(Result::unwrap)
-       .map(|line| line.parse::<i32>())
-       .map(Result::unwrap)
-       .collect())
+fn parse_testcase(mut content: Lines<BufReader<File>>) -> Result<TestCase, Error> {
+    let numbers: Vec<u8> = content
+        .next()
+        .unwrap().unwrap()
+        .split(",")
+        .map(|n| n.parse::<u8>())
+        .filter(Result::is_ok)
+        .map(Result::unwrap)
+        .collect();
+
+    let boards: Vec<Vec<u8>> = content
+        .map(Result::unwrap)
+        .flat_map(|line| line.split(" "))
+        .map(|n| n.parse::<u8>().unwrap())
+        .collect::<Vec<u8>>()
+        .into_iter()
+        .chunks(25)
+        .into_iter()
+        .map(|chunk| chunk.collect())
+        .collect();
+
+    Ok(TestCase::new(boards, numbers))
 }
 
-fn solve(test_case: Vec<i32>) -> Result<usize, Error> {
-    Ok(test_case
-        .windows(2)
-        .filter(|w| w[0] < w[1])
-        .count())
+fn solve(test_case: TestCase) -> Result<&'static Board, Error> {
+    Ok(test_case.solve())
 }
 
-fn print_solution(result: Result<usize, Error>) {
+fn print_solution(result: Result<&Board, Error>) {
     match result {
-        Ok(solution) => print!("{}\n", solution),
+        Ok(_solution) => print!("{}\n", "solution"),
         Err(_) => print!("Error solving for provided test case")
     };
 }
