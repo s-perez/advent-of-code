@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader, Lines, Error};
 use std::path::Path;
 
-use types::{Board, TestCase};
+use types::TestCase;
 
 mod types;
 
@@ -31,8 +31,8 @@ fn parse_testcase(mut content: Lines<BufReader<File>>) -> Result<TestCase, Error
 
     let boards: Vec<Vec<u8>> = content
         .map(Result::unwrap)
-        .flat_map(|line| line.split(" "))
-        .map(|n| n.parse::<u8>().unwrap())
+        .flat_map(|line| line.split(" ").map(String::from).collect::<Vec<String>>())
+        .map(|n: String| n.parse::<u8>().unwrap())
         .collect::<Vec<u8>>()
         .into_iter()
         .chunks(25)
@@ -43,13 +43,13 @@ fn parse_testcase(mut content: Lines<BufReader<File>>) -> Result<TestCase, Error
     Ok(TestCase::new(boards, numbers))
 }
 
-fn solve(test_case: TestCase) -> Result<&'static Board, Error> {
+fn solve(mut test_case: TestCase) -> Result<u32, Error> {
     Ok(test_case.solve())
 }
 
-fn print_solution(result: Result<&Board, Error>) {
+fn print_solution(result: Result<u32, Error>) {
     match result {
-        Ok(_solution) => print!("{}\n", "solution"),
+        Ok(solution) => print!("{}\n", solution),
         Err(_) => print!("Error solving for provided test case")
     };
 }

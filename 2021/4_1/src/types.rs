@@ -30,6 +30,7 @@ impl Cell {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Board {
     numbers: [Cell;25]
 }
@@ -57,6 +58,13 @@ impl Board {
 
     pub fn did_already_win(&self) -> bool {
         self.check_rows_for_win() || self.check_columns_for_win()
+    }
+
+    pub fn calculate_points(&self, last_ball: u32) -> u32 {
+        self.numbers
+            .iter()
+            .filter(|cell| !cell.is_marked())
+            .fold(0 as u32, |acc, cell| acc + cell.get_number() as u32) * last_ball
     }
 
     fn get_rows(&self) -> Vec<[Cell; 5]> {
@@ -98,14 +106,18 @@ impl TestCase {
         }
     }
 
-    pub fn solve(&self) -> &Board {
+    pub fn solve(&mut self) -> u32 {
+        let mut last_ball: u8 = 0;
         self.balls
+            .clone()
             .into_iter()
             .take_while(|x| {
-                self.boards.iter().for_each(|board| board.mark(x));
-                self.boards.iter().any(|board| board.did_already_win())
-            });
-        self.boards.iter().find(|board| board.did_already_win()).unwrap()
+                self.boards.iter_mut().for_each(|board| board.mark(x));
+                last_ball = *x;
+                !self.boards.iter().any(|board| board.did_already_win())
+            })
+            .for_each(drop);
+        self.boards.iter().find(|board| board.did_already_win()).unwrap().calculate_points(last_ball as u32)
 
     }
 }
